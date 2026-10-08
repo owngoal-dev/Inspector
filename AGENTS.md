@@ -8,6 +8,18 @@ iOS process inspector for custom firmware with a roothide or rootless bootstrap:
 - `make deb` — build + ad-hoc sign + package the `.deb` for `FLAVOR` (default `roothide`; `FLAVOR=rootless` installs under `/var/jb` as `iphoneos-arm64`), verify it with `Scripts/verify-deb.sh`, and print its sha256. Output path: `make print-deb-path [FLAVOR=rootless]`. `make deb-all` builds both.
 - Nothing is packaged that cannot launch on the floor. `Scripts/audit-ios-floor.sh` (from the platformize-app-ios template; update it there and copy it verbatim) runs over the built app, daemon and CLI before `package-deb.sh`, and `verify-deb.sh` runs it again over the extracted payload at the package's own `firmware (>= x.y)`, so CI's verify step refuses the same things. It fails on a required library, an embedded build version, or a non-weakly imported Swift runtime symbol newer than the floor — a clean build says nothing about any of them, and dyld kills the app before `main` (Irisin 4.5.11 died on iOS 26.6.2 importing `_swift_initBorrow`, which swift-collections 1.7.0 built with Xcode 27 brings in). The runtime comparison needs an iOS 18.x simulator runtime installed (its Swift libraries are files; 26 and later keep them in a shared cache); without one only the listed symbols are checked. Its `note:` lines are weak imports the code must guard, not failures. A dependency bump that tracks the standard library closely is tested by launching the packaged Release build on a device below the newest iOS, not by building it.
 - Packaging inputs are templates: `@PREFIX@` in `Packaging/wiki.qaq.inspectord.plist`, `DEBIAN/postinst`, `DEBIAN/prerm`, and `DEBIAN/postrm` is substituted at package time (empty for roothide, `/var/jb` for rootless), and `@FLAVOR@` in `DEBIAN/control`. The hooks manage the daemon only: each names its label once (`label=`) and boots out `system/`, `user/501/` and `gui/501/`, because roothide's launchctl can land the daemon in the per-user domain; `uikittools`' triggers register the app, so no hook calls `uicache`. Never hardcode an install prefix in Swift — the daemon derives its install root from `proc_pidpath`.
+- **The app's data folder is `~/Documents/wiki.qaq.Inspector`, and the package
+  makes it.** The app has no container, so its home is mobile's —
+  `<jbroot>/var/mobile` on roothide, `/var/mobile` on rootless — shared with
+  every other app without one. Anything it keeps there goes in a folder named
+  for its bundle id, the isolation a container would give, inside a
+  `Documents` mobile owns, which a container would have had too. The postinst
+  (dpkg, as root) makes each missing level — home, `Documents`, the folder —
+  and hands it to mobile on its own, leaves a level that exists alone, and
+  never follows a symlink. Never `mkdir -p` as root: it leaves every level
+  above the last one root's, and Irisin 4.3.4–4.5.25 left a roothide
+  bootstrap's `Documents` root's that way, so no other app without a
+  container could make anything there.
 - `make harness` — run the shared data-layer and scene-restoration reset tests on macOS (fast; no device needed).
 - Build settings live in `Configuration/*.xcconfig`, not in `project.pbxproj`. `Configuration/Version.xcconfig` is the single source of the app, daemon, CLI, and `.deb` version — change it with `make set-version VERSION=1.2.3 [BUILD=n]`; `make check` fails if a version is hardcoded back into the project file.
 - Optional local overrides go in the git-ignored `Configuration/Developer*.xcconfig` files (for example `DEVELOPMENT_TEAM`). See `Configuration/Developer.xcconfig.example`.
