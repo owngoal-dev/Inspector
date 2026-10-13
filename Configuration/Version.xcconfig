@@ -3,4 +3,4 @@
 // tag publishes the packages CI already built, which are named from here.
 
 MARKETING_VERSION = 0.6.6
-CURRENT_PROJECT_VERSION = 36
+CURRENT_PROJECT_VERSION = 41

@@ -10,7 +10,7 @@ final class ProcessDetailViewController: UITableViewController {
 
     private enum Row {
         case value(label: String, value: String)
-        case link(title: String, kind: ProcessDetailKind)
+        case link(title: String, kind: ProcessDetailKind, count: Int?)
         case text(String)
 
         // What decides whether a live update can redraw cells in place: the
@@ -18,7 +18,7 @@ final class ProcessDetailViewController: UITableViewController {
         var shape: String {
             switch self {
             case .value(let label, _): "value:\(label)"
-            case .link(let title, _): "link:\(title)"
+            case .link(let title, _, _): "link:\(title)"
             case .text: "text"
             }
         }
@@ -71,6 +71,7 @@ final class ProcessDetailViewController: UITableViewController {
         title = row.displayName
         navigationItem.largeTitleDisplayMode = .never
         updateOptionsItem()
+        tableView.register(DetailLinkCell.self, forCellReuseIdentifier: "link")
 
         let refresh = UIRefreshControl()
         refresh.addTarget(self, action: #selector(refreshPulled), for: .valueChanged)
@@ -123,38 +124,16 @@ final class ProcessDetailViewController: UITableViewController {
     }
 
     private var overviewSection: Section {
-        var rows: [Row] = [
+        let rows: [Row] = [
             .value(label: String(localized: "PID"), value: String(record.pid)),
-            .value(label: String(localized: "Started By (PPID)"), value: String(record.parentPID)),
-            .value(label: String(localized: "Running As"), value: InspectorFormat.user(record.userID)),
-            .value(
-                label: String(localized: "Threads"),
-                value: String(
-                    localized: "\(Int(stats.threadCount)) (\(Int(stats.runningThreadCount)) running)"
-                )
-            ),
+            .value(label: String(localized: "PPID"), value: String(record.parentPID)),
+            .value(label: String(localized: "User"), value: InspectorFormat.user(record.userID)),
             .value(
                 label: String(localized: "Priority"),
-                value: String(
-                    localized: "\(Int(record.priority)) (base \(Int(record.basePriority)))"
-                )
+                value: String(record.priority)
             ),
-            .value(label: String(localized: "Nice Value"), value: String(record.nice)),
             .value(label: String(localized: "Sandbox"), value: InspectorFormat.sandbox(record.sandboxStatus)),
         ]
-        if record.availability.contains(.fileDescriptors) {
-            rows.append(
-                .value(
-                    label: String(localized: "Open Files"),
-                    value: String(
-                        localized: "\(Int(record.fileDescriptorCount)) (\(Int(record.socketCount)) sockets)"
-                    )
-                )
-            )
-        }
-        if record.availability.contains(.ports) {
-            rows.append(.value(label: String(localized: "Mach Ports"), value: String(record.portCount)))
-        }
         var footer: String?
         if hasExited {
             footer = String(localized: "This process is no longer running.")
@@ -168,10 +147,19 @@ final class ProcessDetailViewController: UITableViewController {
         Section(
             title: String(localized: "More Details"),
             rows: [
-                .link(title: String(localized: "Threads"), kind: .threads),
-                .link(title: String(localized: "Open Files"), kind: .files),
-                .link(title: String(localized: "Mach Ports"), kind: .ports),
-                .link(title: String(localized: "Loaded Modules"), kind: .modules),
+                .link(
+                    title: String(localized: "Threads"), kind: .threads,
+                    count: stats.availability.contains(.task) ? Int(stats.threadCount) : nil
+                ),
+                .link(
+                    title: String(localized: "Open Files"), kind: .files,
+                    count: record.availability.contains(.fileDescriptors) ? Int(record.fileDescriptorCount) : nil
+                ),
+                .link(
+                    title: String(localized: "Mach Ports"), kind: .ports,
+                    count: record.availability.contains(.ports) ? Int(record.portCount) : nil
+                ),
+                .link(title: String(localized: "Loaded Modules"), kind: .modules, count: nil),
             ]
         )
     }
@@ -294,13 +282,14 @@ final class ProcessDetailViewController: UITableViewController {
             cell.accessibilityValue = value
             // Touch and hold copies the row, and nothing on screen says so.
             cell.accessibilityHint = String(localized: "Touch and hold to copy")
-        case .link(let title, _):
-            cell.textLabel?.text = title
+        case .link(let title, _, let count):
+            (cell as! DetailLinkCell).configure(title: title, count: count)
             cell.accessoryType = .disclosureIndicator
             // The disclosure indicator is the only thing saying this row goes
             // somewhere, and it is purely visual.
             cell.isAccessibilityElement = true
             cell.accessibilityLabel = title
+            cell.accessibilityValue = count.map { String($0) }
             cell.accessibilityTraits = .button
         case .text(let text):
             cell.selectionStyle = .none
@@ -315,7 +304,7 @@ final class ProcessDetailViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        guard case .link(_, let kind) = sections[indexPath.section].rows[indexPath.row] else { return }
+        guard case .link(_, let kind, _) = sections[indexPath.section].rows[indexPath.row] else { return }
         tableView.deselectRow(at: indexPath, animated: true)
         let list = ProcessDetailListViewController(
             kind: kind,
@@ -480,6 +469,67 @@ final class ProcessDetailViewController: UITableViewController {
                 message: InspectorErrorText.describe(error)
             )
         }
+    }
+}
+
+private final class DetailLinkCell: UITableViewCell {
+    private let titleLabel = UILabel()
+    private let countLabel = UILabel()
+    private let countCapsule = UIView()
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        titleLabel.font = .preferredFont(forTextStyle: .body)
+        titleLabel.numberOfLines = 0
+        countLabel.font = UIFontMetrics(forTextStyle: .footnote).scaledFont(
+            for: .monospacedDigitSystemFont(ofSize: 13, weight: .semibold)
+        )
+        countLabel.textColor = .secondaryLabel
+        countLabel.textAlignment = .center
+        countLabel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        countLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        for label in [titleLabel, countLabel] {
+            label.adjustsFontForContentSizeCategory = true
+        }
+        countCapsule.backgroundColor = .tertiarySystemFill
+        countLabel.translatesAutoresizingMaskIntoConstraints = false
+        countCapsule.addSubview(countLabel)
+        NSLayoutConstraint.activate([
+            countLabel.topAnchor.constraint(equalTo: countCapsule.topAnchor, constant: 2),
+            countLabel.bottomAnchor.constraint(equalTo: countCapsule.bottomAnchor, constant: -2),
+            countLabel.leadingAnchor.constraint(equalTo: countCapsule.leadingAnchor, constant: 8),
+            countLabel.trailingAnchor.constraint(equalTo: countCapsule.trailingAnchor, constant: -8),
+            countLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 12),
+        ])
+        let content = UIStackView(arrangedSubviews: [titleLabel, countCapsule])
+        content.alignment = .center
+        content.spacing = 10
+        content.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(content)
+        NSLayoutConstraint.activate([
+            content.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
+            content.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
+            content.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 11),
+            content.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -11),
+        ])
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) is not supported")
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        countCapsule.layer.cornerRadius = countCapsule.bounds.height / 2
+    }
+
+    func configure(title: String, count: Int?) {
+        titleLabel.text = title
+        countLabel.text = count.map {
+            NumberFormatter.localizedString(from: NSNumber(value: $0), number: .decimal)
+        }
+        countCapsule.isHidden = count == nil
     }
 }
 

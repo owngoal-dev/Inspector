@@ -73,8 +73,8 @@ enum InspectorFormat {
     static func sandbox(_ status: ProcessSandboxStatus) -> String {
         switch status {
         case .unavailable: String(localized: "Unknown")
-        case .unrestricted: String(localized: "Unrestricted")
-        case .sandboxed: String(localized: "Sandboxed")
+        case .unrestricted: String(localized: "No")
+        case .sandboxed: String(localized: "Yes")
         }
     }
 
