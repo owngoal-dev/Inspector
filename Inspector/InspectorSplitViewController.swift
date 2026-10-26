@@ -13,7 +13,7 @@ final class InspectorSplitViewController: UISplitViewController, UISplitViewCont
         let list = ProcessListViewController(model: model)
         listNavigation = UINavigationController(rootViewController: list)
         super.init(nibName: nil, bundle: nil)
-        list.openProcess = { [weak self] row in self?.open(row) }
+        list.openProcess = { [weak self] row in await self?.open(row) }
         delegate = self
         viewControllers = [listNavigation, makePlaceholder()]
         // Both columns from the start, so an iPad launch doesn't open on an
@@ -40,8 +40,11 @@ final class InspectorSplitViewController: UISplitViewController, UISplitViewCont
         view.backgroundColor = .systemGroupedBackground
     }
 
-    private func open(_ row: ProcessRow) {
-        let detail = ProcessDetailViewController(row: row, model: model)
+    // The summary is read before the screen exists, so the column opens on a
+    // finished screen instead of one that fills itself in.
+    private func open(_ row: ProcessRow) async {
+        let prepared = await model.prepare(.summary, for: row.record.identity)
+        let detail = ProcessDetailViewController(row: row, model: model, prepared: prepared)
         showDetailViewController(UINavigationController(rootViewController: detail), sender: self)
     }
 

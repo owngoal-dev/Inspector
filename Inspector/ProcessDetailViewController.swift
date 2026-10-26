@@ -39,6 +39,7 @@ final class ProcessDetailViewController: UITableViewController {
     private var summary: ProcessDetailSnapshot?
     private var summaryFailure: String?
     private var isSendingSignal = false
+    private var isOpeningDetail = false
     private var isExporting = false {
         didSet { updateOptionsItem() }
     }
@@ -55,9 +56,11 @@ final class ProcessDetailViewController: UITableViewController {
         model.phase == .active && !model.rows.isEmpty && liveRow == nil
     }
 
-    init(row: ProcessRow, model: ProcessListModel) {
+    init(row: ProcessRow, model: ProcessListModel, prepared: PreparedDetail) {
         self.row = row
         self.model = model
+        summary = prepared.snapshot
+        summaryFailure = prepared.failure
         super.init(style: .insetGrouped)
     }
 
@@ -77,9 +80,16 @@ final class ProcessDetailViewController: UITableViewController {
         refresh.addTarget(self, action: #selector(refreshPulled), for: .valueChanged)
         refreshControl = refresh
 
+        // The row that opened a screen stays lit until this one is back.
+        clearsSelectionOnViewWillAppear = true
+
         observation = model.changes.sink { [weak self] in self?.render() }
         render()
-        Task { await loadSummary() }
+        // Opened from the list, the summary is already in hand; only a screen
+        // built without one reads here.
+        if summary == nil, summaryFailure == nil {
+            Task { await loadSummary() }
+        }
     }
 
     // MARK: Rendering
@@ -305,14 +315,22 @@ final class ProcessDetailViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         guard case .link(_, let kind, _) = sections[indexPath.section].rows[indexPath.row] else { return }
-        tableView.deselectRow(at: indexPath, animated: true)
-        let list = ProcessDetailListViewController(
-            kind: kind,
-            identity: identity,
-            processName: row.displayName,
-            model: model
-        )
-        navigationController?.pushViewController(list, animated: true)
+        guard !isOpeningDetail else { return }
+        isOpeningDetail = true
+        // The row stays lit while the records are read, and the screen that
+        // opens already holds them: no empty table filling in behind a push.
+        Task {
+            let prepared = await model.prepare(kind, for: identity)
+            isOpeningDetail = false
+            let list = ProcessDetailListViewController(
+                kind: kind,
+                identity: identity,
+                processName: row.displayName,
+                model: model,
+                prepared: prepared
+            )
+            navigationController?.pushViewController(list, animated: true)
+        }
     }
 
     // Touch and hold copies a value — paths and bundle IDs are what people
@@ -338,17 +356,9 @@ final class ProcessDetailViewController: UITableViewController {
     }
 
     private func loadSummary() async {
-        summaryFailure = nil
-        do {
-            let result = try await model.details(.summary, for: identity)
-            if result.status == .available || result.status == .partial {
-                summary = result
-            } else {
-                summaryFailure = String(localized: "error \(Int(result.errorCode))")
-            }
-        } catch {
-            summaryFailure = InspectorErrorText.describe(error)
-        }
+        let prepared = await model.prepare(.summary, for: identity)
+        summary = prepared.snapshot
+        summaryFailure = prepared.failure
         render()
     }
 
@@ -475,7 +485,10 @@ final class ProcessDetailViewController: UITableViewController {
 private final class DetailLinkCell: UITableViewCell {
     private let titleLabel = UILabel()
     private let countLabel = UILabel()
-    private let countCapsule = UIView()
+    // The count arrives after the cell is on screen (Mach ports only come with
+    // the summary), so the capsule's height is not final when the cell lays
+    // out: it must round itself, not be rounded by the cell.
+    private let countCapsule = CountCapsuleView()
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -519,17 +532,19 @@ private final class DetailLinkCell: UITableViewCell {
         fatalError("init(coder:) is not supported")
     }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        countCapsule.layer.cornerRadius = countCapsule.bounds.height / 2
-    }
-
     func configure(title: String, count: Int?) {
         titleLabel.text = title
         countLabel.text = count.map {
             NumberFormatter.localizedString(from: NSNumber(value: $0), number: .decimal)
         }
         countCapsule.isHidden = count == nil
+    }
+}
+
+private final class CountCapsuleView: UIView {
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        layer.cornerRadius = bounds.height / 2
     }
 }
 

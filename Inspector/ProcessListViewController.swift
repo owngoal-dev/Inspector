@@ -9,8 +9,10 @@ import Combine
 import UIKit
 
 final class ProcessListViewController: UITableViewController, UISearchResultsUpdating {
-    /// Set by the split view controller, which owns where a process opens.
-    var openProcess: (ProcessRow) -> Void = { _ in }
+    /// Set by the split view controller, which owns where a process opens. It
+    /// finishes once the process screen is up, so a second tap can't open a
+    /// second screen while the first is still being read.
+    var openProcess: (ProcessRow) async -> Void = { _ in }
 
     private let model: ProcessListModel
     private var observation: AnyCancellable?
@@ -19,6 +21,7 @@ final class ProcessListViewController: UITableViewController, UISearchResultsUpd
     // Kept so the row stays highlighted beside its detail column, including
     // across the reloads a live sample causes.
     private var selectedIdentity: ProcessIdentity?
+    private var isOpeningProcess = false
     private let creditsView = ProcessListCreditsView()
     // A connection that comes up quickly shows a blank list, not a flash of
     // "Connecting…"; one that takes a while shows it long enough to be read.
@@ -363,8 +366,20 @@ final class ProcessListViewController: UITableViewController, UISearchResultsUpd
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         guard let identity = dataSource.itemIdentifier(for: indexPath),
               let row = model.row(for: identity) else { return }
+        // Reading the summary takes a moment; a second tap during it would
+        // open a second screen behind the first.
+        guard !isOpeningProcess else {
+            if identity != selectedIdentity { tableView.deselectRow(at: indexPath, animated: false) }
+            return
+        }
+        isOpeningProcess = true
+        // The row stays lit for the moment the summary takes to read, and the
+        // screen that follows is complete on its first frame.
         selectedIdentity = identity
-        openProcess(row)
+        Task {
+            await openProcess(row)
+            isOpeningProcess = false
+        }
     }
 
     override func tableView(

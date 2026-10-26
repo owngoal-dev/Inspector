@@ -16,8 +16,9 @@ final class ProcessDetailListViewController: UITableViewController, UISearchResu
     private var rowsByID: [String: (cells: [String], inspection: DetailRowInspection)] = [:]
     private var dataSource: UITableViewDiffableDataSource<Int, String>!
     private var failure: String?
-    // Details that come back quickly show a blank screen, not a flash of a
-    // spinner; details that take a while show one long enough to be read.
+    // Only a screen that reads again (the retry after a failure) needs an
+    // indicator; one that is pushed here arrives with its records already in
+    // hand.
     private let loadingIndicator = DelayedLoadingIndicator()
     private var searchText = ""
     private var sort: ProcessDetailSort {
@@ -35,12 +36,15 @@ final class ProcessDetailListViewController: UITableViewController, UISearchResu
         kind: ProcessDetailKind,
         identity: ProcessIdentity,
         processName: String,
-        model: ProcessListModel
+        model: ProcessListModel,
+        prepared: PreparedDetail
     ) {
         self.kind = kind
         self.identity = identity
         self.processName = processName
         self.model = model
+        detail = prepared.snapshot
+        failure = prepared.failure
         columns = ProcessDetailTable.columns(for: kind)
         let fallback = ProcessDetailSort.default(for: kind)
         let orderKey = "processDetail.sortOrder.\(kind.rawValue)"
@@ -125,8 +129,13 @@ final class ProcessDetailListViewController: UITableViewController, UISearchResu
         loadingIndicator.onChange = { [weak self] in
             self?.render()
         }
-        render()
-        Task { await load() }
+        // A screen pushed from the overview arrives with its records, so the
+        // table is built here and drawn complete on the first frame; only a
+        // screen built without any reads for itself.
+        rebuildVisible()
+        if detail == nil, failure == nil {
+            Task { await load() }
+        }
     }
 
     func updateSearchResults(for searchController: UISearchController) {
@@ -268,8 +277,23 @@ final class ProcessDetailListViewController: UITableViewController, UISearchResu
 
     // Under the last row rather than a section footer, which a plain table
     // pins to the bottom of the screen, over the rows.
+    //
+    // The footer is measured from the table's width, which doesn't exist until
+    // the view has been laid out: a screen that arrives with its rows would
+    // otherwise build it at zero width, and the label would be laid out from
+    // a negative frame that puts its text against the screen's edge.
+    private var measuredFooterWidth: CGFloat = 0
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        guard tableView.bounds.width != measuredFooterWidth else { return }
+        renderFooter()
+    }
+
     private func renderFooter() {
-        guard let text = footerText, !rows.isEmpty else {
+        let tableWidth = tableView.bounds.width
+        measuredFooterWidth = tableWidth
+        guard tableWidth > 0, let text = footerText, !rows.isEmpty else {
             tableView.tableFooterView = nil
             return
         }
@@ -280,9 +304,9 @@ final class ProcessDetailListViewController: UITableViewController, UISearchResu
         label.textColor = .secondaryLabel
         label.numberOfLines = 0
         let inset = DetailTableMetrics.horizontalInset
-        let width = tableView.bounds.width - inset * 2
+        let width = tableWidth - inset * 2
         let height = label.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude)).height
-        let footer = UIView(frame: CGRect(x: 0, y: 0, width: tableView.bounds.width, height: height + 24))
+        let footer = UIView(frame: CGRect(x: 0, y: 0, width: tableWidth, height: height + 24))
         label.frame = CGRect(x: inset, y: 12, width: width, height: height)
         label.autoresizingMask = [.flexibleWidth]
         footer.addSubview(label)
@@ -305,14 +329,18 @@ final class ProcessDetailListViewController: UITableViewController, UISearchResu
     }
 
     // A row shows only what fits on one line; tapping it opens everything the
-    // record carries, including the full path.
+    // record carries, including the full path. The row stays lit while the
+    // sheet is up and goes out once it is gone, however it was closed.
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
         guard let id = dataSource.itemIdentifier(for: indexPath),
               let row = rowsByID[id] else { return }
-        let sheet = UINavigationController(
+        let sheet = InspectionSheetNavigationController(
             rootViewController: RowInspectionViewController(inspection: row.inspection)
         )
+        sheet.onDismiss = { [weak self] in
+            guard let self, let selected = self.tableView.indexPathForSelectedRow else { return }
+            self.tableView.deselectRow(at: selected, animated: true)
+        }
         if #available(iOS 15.0, *) {
             sheet.sheetPresentationController?.detents = [.medium(), .large()]
         }
@@ -330,27 +358,9 @@ final class ProcessDetailListViewController: UITableViewController, UISearchResu
 
     private func load() async {
         failure = nil
-        do {
-            let result = try await model.details(kind, for: identity)
-            switch result.status {
-            case .available, .partial:
-                detail = result
-            case .processExited:
-                failure = String(localized: "This process has ended.")
-            case .permissionDenied:
-                failure = String(
-                    localized: "This app isn’t allowed to read that (error \(Int(result.errorCode)))."
-                )
-            case .unsupported:
-                failure = String(localized: "This isn’t available on this device.")
-            case .failed:
-                failure = String(
-                    localized: "Couldn’t read this data (error \(Int(result.errorCode)))."
-                )
-            }
-        } catch {
-            failure = InspectorErrorText.describe(error)
-        }
+        let prepared = await model.prepare(kind, for: identity)
+        detail = prepared.snapshot
+        failure = prepared.failure
         rebuildVisible()
     }
 
@@ -379,6 +389,19 @@ final class ProcessDetailListViewController: UITableViewController, UISearchResu
         share.popoverPresentationController?.sourceView = shareButton
         share.popoverPresentationController?.sourceRect = shareButton.bounds
         present(share, animated: true)
+    }
+}
+
+// The sheet a row opens says when it is gone, whether it was closed with
+// Done or swiped away — the row that opened it has to outlast the sheet.
+private final class InspectionSheetNavigationController: UINavigationController {
+    var onDismiss: (() -> Void)?
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        guard isBeingDismissed || presentingViewController == nil, let onDismiss else { return }
+        self.onDismiss = nil
+        onDismiss()
     }
 }
 
