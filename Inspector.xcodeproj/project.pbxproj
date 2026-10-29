@@ -489,7 +489,6 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = YES;
-				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../lib/inspector";
 				PRODUCT_BUNDLE_IDENTIFIER = wiki.qaq.inspector.cli;
 				PRODUCT_MODULE_NAME = InspectorCLI;
 				PRODUCT_NAME = inspector;
@@ -506,7 +505,6 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = YES;
-				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../lib/inspector";
 				PRODUCT_BUNDLE_IDENTIFIER = wiki.qaq.inspector.cli;
 				PRODUCT_MODULE_NAME = InspectorCLI;
 				PRODUCT_NAME = inspector;

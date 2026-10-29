@@ -18,17 +18,20 @@ final class RowInspectionViewController: UITableViewController {
         super.viewDidLoad()
         title = inspection.title
         navigationItem.largeTitleDisplayMode = .never
+        // A title as well as the symbol, and the system's own Done: on iPhone
+        // Duo's outer display the sheet's bar can turn vertical, and only an
+        // item the system can draw as a symbol goes with it.
         let copy = UIBarButtonItem(
             image: UIImage(systemName: "doc.on.doc"),
             style: .plain,
             target: self,
             action: #selector(copyAll)
         )
-        copy.accessibilityLabel = String(localized: "Copy")
+        copy.title = String(localized: "Copy")
+        copy.accessibilityLabel = copy.title
         navigationItem.leftBarButtonItem = copy
         navigationItem.rightBarButtonItem = UIBarButtonItem(
-            title: String(localized: "Done"),
-            style: .done,
+            barButtonSystemItem: .done,
             target: self,
             action: #selector(close)
         )

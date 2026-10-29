@@ -97,21 +97,6 @@ xcrun --sdk iphoneos assetutil \
 xcrun --sdk iphoneos assetutil -Z "$installed_app/Assets.car"
 /usr/bin/ditto "$daemon_binary" "$installed_daemon"
 /usr/bin/ditto "$cli_binary" "$installed_cli"
-# Swift concurrency only ships with the system from iOS 15. The app carries the
-# back-deployed runtime in its Frameworks; the CLI has no bundle, so it gets
-# the same copy beside it, where its rpath looks after /usr/lib/swift.
-concurrency_runtime="$installed_app/Frameworks/libswift_Concurrency.dylib"
-installed_cli_runtime="$staging$install_prefix/usr/lib/inspector/libswift_Concurrency.dylib"
-[[ -f "$concurrency_runtime" ]] || {
-    echo "error: app bundle does not embed libswift_Concurrency.dylib" >&2
-    exit 66
-}
-mkdir -p "$(dirname "$installed_cli_runtime")"
-# Back-deployed runtimes include bitcode that is not needed on the device.
-# Strip it before copying so both consumers receive the same runtime.
-xcrun bitcode_strip "$concurrency_runtime" -r -o "$concurrency_runtime"
-/usr/bin/ditto "$concurrency_runtime" "$installed_cli_runtime"
-chmod 0644 "$concurrency_runtime" "$installed_cli_runtime"
 sed -e "s|@PREFIX@|$install_prefix|g" "$launch_plist" >"$installed_plist"
 rm -rf "$installed_app/_CodeSignature"
 rm -f "$installed_app/embedded.mobileprovision"
@@ -133,8 +118,6 @@ for binary in "$installed_app/$app_executable" "$installed_daemon" "$installed_c
     done
 done
 
-ldid -S -Cadhoc "$concurrency_runtime"
-ldid -S -Cadhoc "$installed_cli_runtime"
 ldid -S"$app_entitlements" -Cadhoc "$installed_app/$app_executable"
 ldid -S"$daemon_entitlements" -Cadhoc "$installed_daemon"
 ldid -S"$cli_entitlements" -Cadhoc "$installed_cli"

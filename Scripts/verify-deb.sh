@@ -39,8 +39,6 @@ for payload in \
     "/Applications/Inspector.app/AppIcon76x76@2x~ipad.png" \
     "/usr/libexec/inspectord" \
     "/usr/bin/inspector" \
-    "/Applications/Inspector.app/Frameworks/libswift_Concurrency.dylib" \
-    "/usr/lib/inspector/libswift_Concurrency.dylib" \
     "/Library/LaunchDaemons/wiki.qaq.inspectord.plist"
 do
     grep -F ".$install_prefix$payload" <<<"$contents" >/dev/null || {
@@ -73,15 +71,14 @@ trap 'rm -rf "$payload_root"' EXIT
 dpkg-deb -x "$deb" "$payload_root"
 
 # The floor is the one the package promises (`firmware (>= x.y)`), audited on
-# the binaries as shipped: the app with its embedded libraries, the daemon, the
-# CLI and the CLI's own copy of the concurrency runtime.
+# the binaries as shipped: the app with anything it embeds, the daemon and the
+# CLI.
 floor="$(dpkg-deb -f "$deb" Depends | sed -n 's/.*firmware (>= \([0-9.]*\)).*/\1/p')"
 [[ -n "$floor" ]] || { echo "error: Depends names no firmware floor" >&2; exit 65; }
 "$repository_root/Scripts/audit-ios-floor.sh" "$floor" \
     "$payload_root$install_prefix/Applications/Inspector.app" \
     "$payload_root$install_prefix/usr/libexec/inspectord" \
-    "$payload_root$install_prefix/usr/bin/inspector" \
-    "$payload_root$install_prefix/usr/lib/inspector"
+    "$payload_root$install_prefix/usr/bin/inspector"
 
 installed_plist="$payload_root$install_prefix/Library/LaunchDaemons/wiki.qaq.inspectord.plist"
 expect "LaunchDaemon label" "$(/usr/libexec/PlistBuddy -c 'Print :Label' "$installed_plist")" "wiki.qaq.inspectord"

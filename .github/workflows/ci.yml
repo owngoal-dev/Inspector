@@ -41,8 +41,15 @@ env:
 jobs:
   build:
     name: Build and verify Debian packages
-    runs-on: macos-26
+    # The iOS 27.1 SDK is what lets the app fill iPhone Duo's displays and
+    # move its bar items to the vertical bar; built against anything older it
+    # sits letterboxed on the inner display. The macos-26 images stop at
+    # Xcode 26, so the build runs on the Xcode 27 image and names its Xcode
+    # rather than taking the image's default.
+    runs-on: xcode-27
     timeout-minutes: 60
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
 
     steps:
       - name: Configure build paths
@@ -50,6 +57,19 @@ jobs:
         run: |
           set -euo pipefail
           echo "DERIVED_DATA=$RUNNER_TEMP/inspector-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+
+      - name: Check the iOS SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          sdk="$(xcrun --sdk iphoneos --show-sdk-version)"
+          IFS=. read -r major minor _ <<<"$sdk.0"
+          if (( major < 27 || (major == 27 && minor < 1) )); then
+            echo "::error::iPhoneOS SDK $sdk is older than 27.1"
+            exit 1
+          fi
+          echo "iPhoneOS SDK $sdk"
 
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -86,7 +106,6 @@ jobs:
 
       - name: Build Debian packages with Xcode
         run: |
-          xcodebuild -version
           make deb-all CONFIGURATION=Release DERIVED_DATA="$DERIVED_DATA"
 
       - name: Verify Debian packages

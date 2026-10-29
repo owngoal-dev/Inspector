@@ -1,8 +1,9 @@
 import Foundation
 
-// String(localized:) and String.LocalizationValue start at iOS 15. This is the
-// same call shape for older systems: an interpolated literal becomes the
-// format key the string catalog already stores ("\(count) processes" looks up
+// The same call shape as Foundation's String(localized:), written when the app
+// still ran on iOS 13 and 14, which don't have it, and kept since: the whole
+// catalog is keyed through it. An interpolated literal becomes the format key
+// the string catalog already stores ("\(count) processes" looks up
 // "%lld processes"), and the arguments are applied to the translated format,
 // so plural variations keep working.
 //

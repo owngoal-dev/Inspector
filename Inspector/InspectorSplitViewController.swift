@@ -1,9 +1,12 @@
 import UIKit
 
-// The classic two-column split view: the column-style API only starts at
-// iOS 14, while this one behaves the same from iOS 13 on. The process list is
-// the primary column; each opened process gets a fresh navigation stack in the
-// secondary one, which hosts the drill-downs (threads, files, ports, modules).
+// The classic two-column split view. The process list is the primary column;
+// each opened process gets a fresh navigation stack in the secondary one,
+// which hosts the drill-downs (threads, files, ports, modules). The split view
+// is what adapts to the space the app has right now: one stack where the
+// width is compact (iPhone, iPhone Duo's outer display, Split View), both
+// columns where it is regular (iPad, iPhone Duo's inner display), collapsing
+// and separating as the device folds and unfolds.
 final class InspectorSplitViewController: UISplitViewController, UISplitViewControllerDelegate {
     private let model: ProcessListModel
     private let listNavigation: UINavigationController
@@ -18,11 +21,7 @@ final class InspectorSplitViewController: UISplitViewController, UISplitViewCont
         viewControllers = [listNavigation, makePlaceholder()]
         // Both columns from the start, so an iPad launch doesn't open on an
         // empty detail pane with the process list hidden behind a button.
-        if #available(iOS 14.0, *) {
-            preferredDisplayMode = .oneBesideSecondary
-        } else {
-            preferredDisplayMode = .allVisible
-        }
+        preferredDisplayMode = .oneBesideSecondary
         minimumPrimaryColumnWidth = 320
         maximumPrimaryColumnWidth = 380
         preferredPrimaryColumnWidthFraction = 0.4

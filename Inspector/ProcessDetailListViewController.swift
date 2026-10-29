@@ -86,7 +86,7 @@ final class ProcessDetailListViewController: UITableViewController, UISearchResu
         super.viewDidLoad()
         title = screenTitle
         navigationItem.largeTitleDisplayMode = .never
-        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: shareButton)
+        navigationItem.rightBarButtonItem = optionsItem
 
         let search = UISearchController(searchResultsController: nil)
         search.searchResultsUpdater = self
@@ -111,9 +111,7 @@ final class ProcessDetailListViewController: UITableViewController, UISearchResu
             bottom: 0,
             right: 0
         )
-        if #available(iOS 15.0, *) {
-            tableView.sectionHeaderTopPadding = 0
-        }
+        tableView.sectionHeaderTopPadding = 0
         dataSource = UITableViewDiffableDataSource(tableView: tableView) { [weak self] tableView, indexPath, id in
             let cell = tableView.dequeueReusableCell(
                 withIdentifier: DetailTableCell.reuseIdentifier,
@@ -163,7 +161,7 @@ final class ProcessDetailListViewController: UITableViewController, UISearchResu
         // minimum time rather than blinking it away; a message never waits.
         if loadingIndicator.holdsContent, !rows.isEmpty { return }
         let showsLoading = loadingIndicator.update(isLoading: failure == nil && detail == nil)
-        shareButton.isEnabled = detail != nil
+        optionsItem.isEnabled = detail != nil
         // An overlay owns the whole screen, so nothing is listed under one.
         var snapshot = NSDiffableDataSourceSnapshot<Int, String>()
         if !rows.isEmpty {
@@ -282,18 +280,29 @@ final class ProcessDetailListViewController: UITableViewController, UISearchResu
     // the view has been laid out: a screen that arrives with its rows would
     // otherwise build it at zero width, and the label would be laid out from
     // a negative frame that puts its text against the screen's edge.
-    private var measuredFooterWidth: CGFloat = 0
+    //
+    // Unlike a row, a table footer spans the whole table, safe area and all,
+    // so the text is set inside the safe area one side at a time. On iPhone
+    // Duo the vertical bar insets only the side it is on, and that side can
+    // change with the table's width unchanged (Split View on either side).
+    private var measuredFooterSpan: (width: CGFloat, left: CGFloat, right: CGFloat) = (0, 0, 0)
+
+    private var footerSpan: (width: CGFloat, left: CGFloat, right: CGFloat) {
+        (tableView.bounds.width, tableView.safeAreaInsets.left, tableView.safeAreaInsets.right)
+    }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        guard tableView.bounds.width != measuredFooterWidth else { return }
+        guard footerSpan != measuredFooterSpan else { return }
         renderFooter()
     }
 
     private func renderFooter() {
-        let tableWidth = tableView.bounds.width
-        measuredFooterWidth = tableWidth
-        guard tableWidth > 0, let text = footerText, !rows.isEmpty else {
+        let span = footerSpan
+        measuredFooterSpan = span
+        let inset = DetailTableMetrics.horizontalInset
+        let width = span.width - span.left - span.right - inset * 2
+        guard width > 0, let text = footerText, !rows.isEmpty else {
             tableView.tableFooterView = nil
             return
         }
@@ -303,11 +312,9 @@ final class ProcessDetailListViewController: UITableViewController, UISearchResu
         label.adjustsFontForContentSizeCategory = true
         label.textColor = .secondaryLabel
         label.numberOfLines = 0
-        let inset = DetailTableMetrics.horizontalInset
-        let width = tableWidth - inset * 2
         let height = label.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude)).height
-        let footer = UIView(frame: CGRect(x: 0, y: 0, width: tableWidth, height: height + 24))
-        label.frame = CGRect(x: inset, y: 12, width: width, height: height)
+        let footer = UIView(frame: CGRect(x: 0, y: 0, width: span.width, height: height + 24))
+        label.frame = CGRect(x: span.left + inset, y: 12, width: width, height: height)
         label.autoresizingMask = [.flexibleWidth]
         footer.addSubview(label)
         tableView.tableFooterView = footer
@@ -341,9 +348,7 @@ final class ProcessDetailListViewController: UITableViewController, UISearchResu
             guard let self, let selected = self.tableView.indexPathForSelectedRow else { return }
             self.tableView.deselectRow(at: selected, animated: true)
         }
-        if #available(iOS 15.0, *) {
-            sheet.sheetPresentationController?.detents = [.medium(), .large()]
-        }
+        sheet.sheetPresentationController?.detents = [.medium(), .large()]
         present(sheet, animated: true)
     }
 
@@ -366,9 +371,9 @@ final class ProcessDetailListViewController: UITableViewController, UISearchResu
 
     // MARK: Sharing
 
-    private lazy var shareButton = InspectorMenuButton(
-        symbolName: "ellipsis",
-        accessibilityLabel: String(localized: "More Options")
+    private lazy var optionsItem = UIBarButtonItem(
+        menuTitle: String(localized: "More Options"),
+        symbolName: "ellipsis"
     ) { [weak self] in
         InspectorMenu(sections: [[
             InspectorMenuItem(
@@ -386,8 +391,7 @@ final class ProcessDetailListViewController: UITableViewController, UISearchResu
             subject: "\(screenTitle) — \(processName)"
         )
         let share = UIActivityViewController(activityItems: [item], applicationActivities: nil)
-        share.popoverPresentationController?.sourceView = shareButton
-        share.popoverPresentationController?.sourceRect = shareButton.bounds
+        share.popoverPresentationController?.barButtonItem = optionsItem
         present(share, animated: true)
     }
 }
