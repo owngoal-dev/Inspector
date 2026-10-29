@@ -46,8 +46,6 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     ) {
         guard let windowScene = scene as? UIWindowScene else { return }
         let window = UIWindow(windowScene: windowScene)
-        // The asset catalog's global accent only reaches UIKit from iOS 14.
-        window.tintColor = UIColor(named: "AccentColor")
         // The launch screen's own surface holds the window until there is a
         // list to show: the app's first frame is then the finished list, not
         // an empty one that fills itself in a moment later.

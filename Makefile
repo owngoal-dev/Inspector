@@ -132,7 +132,7 @@ check:
 	done
 	@[[ "$(APP_VERSION)" =~ ^[0-9]+\.[0-9]+\.[0-9]+$$ ]] || { echo "error: MARKETING_VERSION must look like 1.2.3, got '$(APP_VERSION)'" >&2; exit 65; }
 	@[[ "$(BUILD_NUMBER)" =~ ^[0-9]+$$ ]] || { echo "error: CURRENT_PROJECT_VERSION must be an integer, got '$(BUILD_NUMBER)'" >&2; exit 65; }
-	@[[ "$(MINIMUM_IOS_VERSION)" =~ ^[0-9]+\.[0-9]+$$ ]] || { echo "error: IPHONEOS_DEPLOYMENT_TARGET must look like 13.0, got '$(MINIMUM_IOS_VERSION)'" >&2; exit 65; }
+	@[[ "$(MINIMUM_IOS_VERSION)" =~ ^[0-9]+\.[0-9]+$$ ]] || { echo "error: IPHONEOS_DEPLOYMENT_TARGET must look like 15.0, got '$(MINIMUM_IOS_VERSION)'" >&2; exit 65; }
 	@grep -qE '(MARKETING_VERSION|CURRENT_PROJECT_VERSION) =' "$(PROJECT)/project.pbxproj" \
 		&& { echo "error: versions must live in Configuration/Version.xcconfig, not project.pbxproj" >&2; exit 65; } || true
 	@grep -q 'IPHONEOS_DEPLOYMENT_TARGET' "$(PROJECT)/project.pbxproj" \
@@ -150,7 +150,7 @@ check:
 	fi
 	@"$(ACCESSIBILITY_GATE)" $(APP_SOURCE_ROOTS)
 	@# Every key here is `manual` on purpose: Xcode cannot extract through the
-	@# iOS 13 `String(localized:)` shim, so nothing is extracted and nothing
+	@# `String(localized:)` shim, so nothing is extracted and nothing
 	@# should ever be reaped. A `stale` marker therefore means Xcode wrote one
 	@# during a build, into a file too large to read, and it would ride into a
 	@# commit as one green line. Fix it with Scripts/prune-xcstrings.py.

@@ -57,13 +57,10 @@ final class ProcessListViewController: UITableViewController, UISearchResultsUpd
         if #unavailable(iOS 26.0) {
             navigationItem.titleView = titleView
         }
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: statsButton)
+        navigationItem.leftBarButtonItem = statsItem
         // The first item sits at the edge: the live-updates toggle, with the
         // sort and filter menu beside it.
-        navigationItem.rightBarButtonItems = [
-            liveUpdatesItem,
-            UIBarButtonItem(customView: actionsButton),
-        ]
+        navigationItem.rightBarButtonItems = [liveUpdatesItem, actionsItem]
 
         let search = UISearchController(searchResultsController: nil)
         search.searchResultsUpdater = self
@@ -75,11 +72,9 @@ final class ProcessListViewController: UITableViewController, UISearchResultsUpd
         clearsSelectionOnViewWillAppear = false
         tableView.register(ProcessRowCell.self, forCellReuseIdentifier: ProcessRowCell.reuseIdentifier)
         tableView.estimatedRowHeight = metrics.rowHeight
-        // From iOS 15 a plain table pads above every section header; the
-        // headings sit straight under the search bar instead.
-        if #available(iOS 15.0, *) {
-            tableView.sectionHeaderTopPadding = 0
-        }
+        // A plain table pads above every section header; the headings sit
+        // straight under the search bar instead.
+        tableView.sectionHeaderTopPadding = 0
         dataSource = ProcessListDataSource(tableView: tableView) { [weak self] tableView, indexPath, identity in
             let cell = tableView.dequeueReusableCell(
                 withIdentifier: ProcessRowCell.reuseIdentifier,
@@ -205,7 +200,7 @@ final class ProcessListViewController: UITableViewController, UISearchResultsUpd
             configure(header)
         }
         renderSubtitle()
-        statsButton.isEnabled = !model.rows.isEmpty
+        statsItem.isEnabled = !model.rows.isEmpty
         renderLiveUpdatesItem()
         // A plain table ruled the empty space below the last row with
         // separators, over the overlay too; an empty footer stops them.
@@ -439,12 +434,12 @@ final class ProcessListViewController: UITableViewController, UISearchResultsUpd
 
     // MARK: Menus
 
-    private lazy var statsButton = InspectorMenuButton(
+    private lazy var statsItem = UIBarButtonItem(
+        menuTitle: String(localized: "System Stats"),
         symbolName: {
             if #available(iOS 17.0, *) { return "gauge.with.needle" }
             return "gauge"
-        }(),
-        accessibilityLabel: String(localized: "System Stats")
+        }()
     ) { [weak self] in
         InspectorMenu(sections: [self?.statsItems() ?? []])
     }
@@ -452,9 +447,9 @@ final class ProcessListViewController: UITableViewController, UISearchResultsUpd
     // Green while samples keep arriving, yellow while they are paused: the
     // button shows the state, and a tap flips it. The two glyphs differ in
     // width, and a bar item sized to its image grew and shrank with every
-    // flip, shoving the menu beside it. A custom view with a fixed width, the
-    // same as the menu buttons', keeps the glyph centred in a slot that never
-    // moves.
+    // flip, shoving the menu beside it. A custom view with a fixed width keeps
+    // the glyph centred in a slot that never moves, and a 36-point square
+    // fits iPhone Duo's vertical bar as it is.
     private lazy var liveUpdatesButton: UIButton = {
         let button = UIButton(type: .system)
         button.frame = CGRect(x: 0, y: 0, width: 36, height: 36)
@@ -463,32 +458,51 @@ final class ProcessListViewController: UITableViewController, UISearchResultsUpd
         return button
     }()
 
-    private lazy var liveUpdatesItem = UIBarButtonItem(customView: liveUpdatesButton)
+    private lazy var liveUpdatesItem: UIBarButtonItem = {
+        let item = UIBarButtonItem(customView: liveUpdatesButton).preferringVerticalBar()
+        // It says whether the list is live, which is no use once it has gone
+        // into an overflow menu: the menus beside it go first.
+        if #available(iOS 27.0, *) {
+            item.visibilityPriority = .high
+        }
+        return item
+    }()
+
+    private var renderedPausedState: Bool?
 
     private func renderLiveUpdatesItem() {
         let isPaused = model.isPaused
-        liveUpdatesButton.setImage(
-            UIImage(systemName: isPaused ? "pause.fill" : "dot.radiowaves.left.and.right"),
-            for: .normal
-        )
+        guard isPaused != renderedPausedState else { return }
+        renderedPausedState = isPaused
+        let image = UIImage(systemName: isPaused ? "pause.fill" : "dot.radiowaves.left.and.right")
+        liveUpdatesButton.setImage(image, for: .normal)
         liveUpdatesButton.tintColor = isPaused ? .systemYellow : .systemGreen
         // The label names what a tap does next. While paused the button
         // resumes, so keeping "Pause Live Updates" there reads backwards, and
         // .selected alone leaves the state to be inferred. A custom view is
         // what VoiceOver reads, so the label and traits go on the button.
-        liveUpdatesButton.accessibilityLabel = isPaused
+        let title = isPaused
             ? String(localized: "Resume Live Updates")
             : String(localized: "Pause Live Updates")
+        liveUpdatesButton.accessibilityLabel = title
         liveUpdatesButton.accessibilityTraits = isPaused ? [.button, .selected] : .button
+        // What a menu shows in place of the custom view, should the bar run
+        // out of room for it.
+        liveUpdatesItem.title = title
+        if #available(iOS 16.0, *) {
+            liveUpdatesItem.menuRepresentation = UIAction(title: title, image: image) { [weak self] _ in
+                self?.toggleLiveUpdates()
+            }
+        }
     }
 
     @objc private func toggleLiveUpdates() {
         model.isPaused.toggle()
     }
 
-    private lazy var actionsButton = InspectorMenuButton(
-        symbolName: "line.3.horizontal.decrease",
-        accessibilityLabel: String(localized: "Sort and Filter")
+    private lazy var actionsItem = UIBarButtonItem(
+        menuTitle: String(localized: "Sort and Filter"),
+        symbolName: "line.3.horizontal.decrease"
     ) { [weak self] in
         InspectorMenu(sections: [self?.actionItems() ?? []])
     }
@@ -680,9 +694,12 @@ private final class ProcessListCreditsView: UIView {
         stack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(stack)
         bottomPadding = bottomAnchor.constraint(equalTo: stack.bottomAnchor, constant: Self.padding)
+        // Centred under the rows, which keep to the safe area, not under the
+        // whole table: a table footer runs beneath a vertical bar on one side.
+        let safeArea = safeAreaLayoutGuide
         NSLayoutConstraint.activate([
-            stack.centerXAnchor.constraint(equalTo: centerXAnchor),
-            stack.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: Self.padding),
+            stack.centerXAnchor.constraint(equalTo: safeArea.centerXAnchor),
+            stack.leadingAnchor.constraint(greaterThanOrEqualTo: safeArea.leadingAnchor, constant: Self.padding),
             stack.topAnchor.constraint(equalTo: topAnchor, constant: Self.padding),
             bottomPadding,
         ])

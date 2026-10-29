@@ -364,9 +364,9 @@ final class ProcessDetailViewController: UITableViewController {
 
     // MARK: Options
 
-    private lazy var optionsButton = InspectorMenuButton(
-        symbolName: "ellipsis",
-        accessibilityLabel: String(localized: "More Options")
+    private lazy var optionsItem = UIBarButtonItem(
+        menuTitle: String(localized: "More Options"),
+        symbolName: "ellipsis"
     ) { [weak self] in
         InspectorMenu(sections: self?.optionSections() ?? [])
     }
@@ -383,9 +383,9 @@ final class ProcessDetailViewController: UITableViewController {
             // is under way.
             spinner.isAccessibilityElement = true
             spinner.accessibilityLabel = String(localized: "Exporting…")
-            navigationItem.rightBarButtonItem = UIBarButtonItem(customView: spinner)
+            navigationItem.rightBarButtonItem = UIBarButtonItem(customView: spinner).preferringVerticalBar()
         } else {
-            navigationItem.rightBarButtonItem = UIBarButtonItem(customView: optionsButton)
+            navigationItem.rightBarButtonItem = optionsItem
         }
     }
 
@@ -421,8 +421,9 @@ final class ProcessDetailViewController: UITableViewController {
     // be read back later, when the process may well be gone.
     private func exportDetails() async {
         isExporting = true
-        defer { isExporting = false }
         let document = await ProcessExport.document(for: identity, using: model)
+        // The menu is back in the bar before the share sheet points at it.
+        isExporting = false
         do {
             let url = try ProcessExport.write(
                 document,
@@ -432,8 +433,7 @@ final class ProcessDetailViewController: UITableViewController {
             // The plist lives in a temporary directory only until the share
             // sheet is done with it; nothing is left lying around afterwards.
             share.completionWithItemsHandler = { _, _, _, _ in ProcessExport.removeExports() }
-            share.popoverPresentationController?.sourceView = optionsButton
-            share.popoverPresentationController?.sourceRect = optionsButton.bounds
+            share.popoverPresentationController?.barButtonItem = optionsItem
             present(share, animated: true)
         } catch {
             presentFailure(
@@ -462,8 +462,7 @@ final class ProcessDetailViewController: UITableViewController {
             Task { await self?.send(signal) }
         })
         sheet.addAction(UIAlertAction(title: String(systemLocalized: "Cancel"), style: .cancel))
-        sheet.popoverPresentationController?.sourceView = optionsButton
-        sheet.popoverPresentationController?.sourceRect = optionsButton.bounds
+        sheet.popoverPresentationController?.barButtonItem = optionsItem
         present(sheet, animated: true)
     }
 
