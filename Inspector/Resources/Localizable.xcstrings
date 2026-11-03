@@ -488,7 +488,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "“请求退出”让进程自行关闭；“强制退出”会立即结束它，未保存的内容可能丢失。"
+            "value": "“请求退出”让进程自行关闭；“强制退出”会立即结束它，未存储的内容可能会丢失。"
           }
         },
         "zh-Hant": {
@@ -737,13 +737,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$lld（%2$lld 个运行中）"
+            "value": "%1$lld（其中 %2$lld 个运行中）"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$lld（%2$lld 個執行中）"
+            "value": "%1$lld（其中 %2$lld 個執行中）"
           }
         }
       }
@@ -903,13 +903,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$lld（基准 %2$lld）"
+            "value": "%1$lld（基础 %2$lld）"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$lld（基準 %2$lld）"
+            "value": "%1$lld（基本 %2$lld）"
           }
         }
       }
@@ -1725,13 +1725,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$lld 个进程, %2$lld 个线程"
+            "value": "%1$lld 个进程，%2$lld 个线程"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$lld 個程序, %2$lld 個執行緒"
+            "value": "%1$lld 個程序，%2$lld 個執行緒"
           }
         }
       }
@@ -2796,13 +2796,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "应用包"
+            "value": "App 套装"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "應用程式套件"
+            "value": "App 套件"
           }
         }
       }
@@ -2879,13 +2879,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "应用"
+            "value": "App"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "應用程式"
+            "value": "App"
           }
         }
       }
@@ -3211,7 +3211,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "包标识符"
+            "value": "套装 ID"
           }
         },
         "zh-Hant": {
@@ -3377,13 +3377,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "在左侧选择一个进程以查看其活动。"
+            "value": "在左侧选择进程，即可查看它的运行情况。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "在左側選擇一個程序，即可查看它正在做什麼。"
+            "value": "在左側選擇程序，即可查看它的執行情況。"
           }
         }
       }
@@ -3792,7 +3792,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "无法加载"
+            "value": "无法载入"
           }
         },
         "zh-Hant": {
@@ -3958,7 +3958,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "无法读取该数据（错误 %lld）。"
+            "value": "无法读取此数据（错误 %lld）。"
           }
         },
         "zh-Hant": {
@@ -4041,7 +4041,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "无法刷新详情：%@"
+            "value": "无法刷新详细信息：%@"
           }
         },
         "zh-Hant": {
@@ -4124,7 +4124,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "信号发送失败"
+            "value": "无法发送信号"
           }
         },
         "zh-Hant": {
@@ -4290,7 +4290,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "CPU 占用"
+            "value": "CPU 使用率"
           }
         },
         "zh-Hant": {
@@ -5618,13 +5618,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "已挂起"
+            "value": "已中止"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "已掛起"
+            "value": "已中止"
           }
         }
       }
@@ -5867,13 +5867,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Inspector 已更新或被移除"
+            "value": "Inspector 已更新或移除"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Inspector 已更新或已被移除"
+            "value": "Inspector 已更新或移除"
           }
         }
       }
@@ -6033,7 +6033,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "类型"
+            "value": "种类"
           }
         },
         "zh-Hant": {
@@ -6282,7 +6282,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "已加载模块"
+            "value": "已载入的模块"
           }
         },
         "zh-Hant": {
@@ -6620,7 +6620,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mach 埠"
+            "value": "Mach 連接埠"
           }
         }
       }
@@ -7112,7 +7112,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "内存占用"
+            "value": "已用内存"
           }
         },
         "zh-Hant": {
@@ -7278,96 +7278,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "更多详情"
+            "value": "更多详细信息"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "更多詳細資訊"
-          }
-        }
-      }
-    },
-    "More Options": {
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "المزيد من الخيارات"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Weitere Optionen"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "More Options"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Más opciones"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plus d’options"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Altre opzioni"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "その他のオプション"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "추가 옵션"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mais opções"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Дополнительные параметры"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tùy chọn khác"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "更多选项"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "更多選項"
           }
         }
       }
@@ -8938,7 +8855,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "暂停实时刷新"
+            "value": "暂停实时更新"
           }
         },
         "zh-Hant": {
@@ -9359,7 +9276,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "埠"
+            "value": "連接埠"
           }
         }
       }
@@ -9442,7 +9359,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "埠 %@"
+            "value": "連接埠 %@"
           }
         }
       }
@@ -9525,7 +9442,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "埠名稱"
+            "value": "連接埠名稱"
           }
         }
       }
@@ -9608,7 +9525,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "埠集合成員"
+            "value": "連接埠集合成員"
           }
         }
       }
@@ -10432,7 +10349,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "远端地址"
+            "value": "远程地址"
           }
         },
         "zh-Hant": {
@@ -10764,7 +10681,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "继续实时刷新"
+            "value": "继续实时更新"
           }
         },
         "zh-Hant": {
@@ -11932,7 +11849,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "依埠名稱或權限搜尋"
+            "value": "依連接埠名稱或權限搜尋"
           }
         }
       }
@@ -13337,7 +13254,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "状态位"
+            "value": "状态标志"
           }
         },
         "zh-Hant": {
@@ -14416,7 +14333,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "本应用无权读取该内容（错误 %lld）。"
+            "value": "此 App 无权读取该内容（错误 %lld）。"
           }
         },
         "zh-Hant": {
@@ -14582,13 +14499,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "此副本已不再安装。请退出并重新打开 Inspector 以继续。"
+            "value": "当前运行的版本已不再安装。请退出 Inspector 后重新打开。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "此副本已不再安裝。請結束並重新打開 Inspector 以繼續。"
+            "value": "目前執行的版本已不再安裝。請結束 Inspector 後重新打開。"
           }
         }
       }
@@ -14665,13 +14582,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "本机"
+            "value": "此设备"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "本裝置"
+            "value": "此裝置"
           }
         }
       }
@@ -14748,7 +14665,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "这会立即结束进程，未保存的内容可能丢失。"
+            "value": "这会立即结束进程，未存储的内容可能会丢失。"
           }
         },
         "zh-Hant": {
@@ -14914,13 +14831,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "该进程已结束或已发生变化。"
+            "value": "此进程已结束或已发生变化。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "此程序已結束或已變更。"
+            "value": "此程序已結束或已發生變化。"
           }
         }
       }
@@ -14997,7 +14914,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "该进程已结束。"
+            "value": "此进程已结束。"
           }
         },
         "zh-Hant": {
@@ -15080,7 +14997,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "该进程已不再运行。"
+            "value": "此进程已不再运行。"
           }
         },
         "zh-Hant": {
@@ -15163,13 +15080,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "该会话已在运行中。"
+            "value": "此操作已在进行中。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "此工作階段已在執行中。"
+            "value": "此操作已在進行中。"
           }
         }
       }
@@ -15661,13 +15578,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "轻点并按住以拷贝"
+            "value": "按住即可拷贝"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "輕點並按住以拷貝"
+            "value": "按住即可拷貝"
           }
         }
       }
@@ -16040,7 +15957,7 @@
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Attivo"
+            "value": "Attivo da"
           }
         },
         "ja": {
@@ -16052,13 +15969,13 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "정상 실행 중"
+            "value": "가동 시간"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ativo"
+            "value": "Ativo há"
           }
         },
         "ru": {
@@ -16070,19 +15987,19 @@
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Đang hoạt động"
+            "value": "Thời gian hoạt động"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "已运行"
+            "value": "已运行时间"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "執行中"
+            "value": "已開機時間"
           }
         }
       }
